@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>भारतीय पशुधन पहचान प्रणाली | Indian Livestock Identification System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#34517d',
+                        'primary-light': '#4a6ba3',
+                        'primary-dark': '#2a4066',
+                        'primary-50': '#f0f4f8',
+                        'primary-100': '#d9e2ec',
+                        'primary-200': '#bcccdc'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #34517d 0%, #4a6ba3 50%, #ffffff 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(52, 81, 125, 0.1);
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(52, 81, 125, 0.2);
+        }
+        .breed-card {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            border: 1px solid rgba(52, 81, 125, 0.2);
+        }
+        .confidence-bar {
+            background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+        }
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        .tooltip.show {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+    <header class="gradient-bg shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="text-center md:text-left mb-4 md:mb-0">
+                    <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">🐄 भारतीय पशुधन पहचान प्रणाली</h1>
+                    <p class="text-blue-100 text-lg">Indian Livestock Identification System</p>
+                    <p class="text-blue-200 text-sm">Reference: Bharat Pashudhan Portal</p>
+                </div>
+               
+                <div class="flex flex-col md:flex-row gap-4 items-center">
+                    <img src="gow.jpeg" alt="Gaw Gyan Logo" class="w-12 h-12">
+                    <button id="audioToggle" class="bg-white text-primary px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors shadow-md">
+                        🔊 Audio Support
+                    </button>
+                    <select id="languageSelect" class="bg-white text-primary px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300 shadow-md">
+                        <option value="hi">हिंदी (Hindi)</option>
+                        <option value="en">English</option>
+                        <option value="bn">বাংলা (Bengali)</option>
+                        <option value="te">తెలుగు (Telugu)</option>
+                        <option value="mr">मराठी (Marathi)</option>
+                        <option value="ta">தமிழ் (Tamil)</option>
+                        <option value="gu">ગુજરાતી (Gujarati)</option>
+                        <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                        <option value="ml">മലയാളം (Malayalam)</option>
+                        <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                        <option value="or">ଓଡ଼ିଆ (Odia)</option>
+                        <option value="as">অসমীয়া (Assamese)</option>
+                        <option value="ur">اردু (Urdu)</option>
+                        <option value="sa">संस्कृत (Sanskrit)</option>
+                        <option value="sd">سنڌي (Sindhi)</option>
+                        <option value="ne">नेपाली (Nepali)</option>
+                        <option value="ks">कश्मीरी (Kashmiri)</option>
+                        <option value="doi">डोगरी (Dogri)</option>
+                        <option value="mni">মৈতৈলোন্ (Manipuri)</option>
+                        <option value="sat">ᱥᱟᱱᱛᱟᱲᱤ (Santali)</option>
+                        <option value="mai">मैथिली (Maithili)</option>
+                        <option value="kok">कोंकणी (Konkani)</option>
+                        <option value="brx">बड़ो (Bodo)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-wrap gap-2 mb-8 bg-white p-4 rounded-xl shadow-md">
+            <button class="tab-btn active bg-primary text-white hover:bg-primary-light px-6 py-3 rounded-lg font-medium transition-colors" data-tab="upload">
+                📸 Photo Upload
+            </button>
+            <button class="tab-btn bg-gray-200 text-primary hover:bg-gray-300 px-6 py-3 rounded-lg font-medium transition-colors" data-tab="cattle">
+                🐄 Cattle Breeds (54)
+            </button>
+            <button class="tab-btn bg-gray-200 text-primary hover:bg-gray-300 px-6 py-3 rounded-lg font-medium transition-colors" data-tab="buffalo">
+                🐃 Buffalo Breeds (21)
+            </button>
+            <button class="tab-btn bg-gray-200 text-primary hover:bg-gray-300 px-6 py-3 rounded-lg font-medium transition-colors" data-tab="search">
+                🔍 Search & Filter
+            </button>
+            <button class="tab-btn bg-gray-200 text-primary hover:bg-gray-300 px-6 py-3 rounded-lg font-medium transition-colors" data-tab="history">
+                📋 History
+            </button>
+        </div>
+
+        <div id="uploadTab" class="tab-content">
+            <div class="bg-white rounded-xl p-6 mb-8 shadow-md">
+                <h2 class="text-2xl font-bold mb-4 text-primary">📸 Photo Upload & AI Identification</h2>
+                <div class="max-w-2xl mx-auto">
+                    <div id="dropZone" class="border-2 border-dashed border-primary-300 rounded-lg p-8 text-center hover:border-primary-400 transition-colors cursor-pointer bg-primary-50 mb-4"
+                        onmouseover="showTooltip(this, 'Click to upload or drag and drop your cattle/buffalo image')"
+                        onmouseout="hideTooltip()">
+                        <div class="text-4xl mb-4 text-primary">📷</div>
+                        <p class="text-lg mb-2 text-primary">Click to upload or drag & drop</p>
+                        <p class="text-sm text-gray-600">Supports JPG, PNG, WebP (Max 10MB)</p>
+                        <input type="file" id="fileInput" class="hidden" accept="image/*">
+                    </div>
+                   
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <button id="cameraToggle" class="flex-1 bg-primary hover:bg-primary-light text-white px-4 py-3 rounded-lg font-medium transition-colors mb-2"
+                            onmouseover="showTooltip(this, 'Take a photo using your device camera')"
+                            onmouseout="hideTooltip()">
+                            📸 Take Photo
+                        </button>
+                        <button id="captureBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-colors mb-2 hidden">
+                            ✅ Capture Photo
+                        </button>
+                        <button id="toggleCameraBtn" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-3 rounded-lg font-medium transition-colors mb-2 hidden">
+                            🔄 Switch Camera
+                        </button>
+                    </div>
+
+                    <video id="cameraFeed" class="hidden w-full max-w-md mx-auto h-64 object-cover rounded-lg shadow-md mb-4" autoplay></video>
+                    <canvas id="cameraCanvas" class="hidden"></canvas>
+                   
+                    <div id="uploadPreview" class="hidden mt-6">
+                        <div class="text-center mb-4">
+                            <img id="previewImage" class="w-full max-w-md mx-auto h-64 object-fill rounded-lg shadow-md">
+                        </div>
+                        <div id="confidenceSection" class="mb-4 hidden">
+                            <h3 class="text-lg font-semibold mb-2 text-primary">AI Confidence Score</h3>
+                            <div class="bg-gray-200 rounded-full h-4 mb-2">
+                                <div id="confidenceBar" class="confidence-bar h-4 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                            </div>
+                            <p id="confidenceText" class="text-sm text-gray-600"></p>
+                        </div>
+                        <button id="identifyBtn" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-colors mb-2">
+                            🔍 Identify Breed with AI
+                        </button>
+                        <div class="flex gap-2">
+                            <button id="saveResult" class="flex-1 bg-primary hover:bg-primary-light text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                💾 Save Result
+                            </button>
+                            <button id="shareResult" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                📤 Share
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="searchTab" class="tab-content hidden">
+            <div class="bg-white rounded-xl p-6 mb-6 shadow-md">
+                <div class="grid md:grid-cols-4 gap-4">
+                    <input type="text" id="searchInput" placeholder="Search breeds..."
+                           class="bg-gray-50 text-gray-800 px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-200"
+                           onmouseover="showTooltip(this, 'Search by breed name, traits, or characteristics')"
+                           onmouseout="hideTooltip()">
+                    <select id="stateFilter" class="bg-gray-50 text-gray-800 px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:outline-none">
+                        <option value="">All States</option>
+                        <option value="Andhra Pradesh">Andhra Pradesh</option>
+                        <option value="Gujarat">Gujarat</option>
+                        <option value="Haryana">Haryana</option>
+                        <option value="Karnataka">Karnataka</option>
+                        <option value="Maharashtra">Maharashtra</option>
+                        <option value="Punjab">Punjab</option>
+                        <option value="Rajasthan">Rajasthan</option>
+                        <option value="Tamil Nadu">Tamil Nadu</option>
+                        <option value="Uttar Pradesh">Uttar Pradesh</option>
+                        <option value="West Bengal">West Bengal</option>
+                        <option value="Odisha">Odisha</option>
+                        <option value="Kerala">Kerala</option>
+                        <option value="Madhya Pradesh">Madhya Pradesh</option>
+                        <option value="Bihar">Bihar</option>
+                        <option value="Assam">Assam</option>
+                        <option value="Himachal Pradesh">Himachal Pradesh</option>
+                        <option value="Ladakh">Ladakh</option>
+                    </select>
+                    <select id="yieldFilter" class="bg-gray-50 text-gray-800 px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:outline-none">
+                        <option value="">All Milk Yields</option>
+                        <option value="high">High (>15L/day)</option>
+                        <option value="medium">Medium (8-15L/day)</option>
+                        <option value="low">Low (<8L/day)</option>
+                    </select>
+                    <select id="typeFilter" class="bg-gray-50 text-gray-800 px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:outline-none">
+                        <option value="">All Types</option>
+                        <option value="cattle">Cattle Only</option>
+                        <option value="buffalo">Buffalo Only</option>
+                    </select>
+                </div>
+            </div>
+           
+            <div id="searchResults" class="bg-white rounded-xl p-6 shadow-md">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-primary">🔍 Search Results</h2>
+                    <span id="resultCount" class="text-gray-600">Showing all breeds</span>
+                </div>
+                <div id="searchGrid" class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    </div>
+            </div>
+        </div>
+
+        <div id="historyTab" class="tab-content hidden">
+            <div class="bg-white rounded-xl p-6 shadow-md">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-primary">📋 Identification History</h2>
+                </div>
+                <div id="historyList" class="space-y-4">
+                    <p class="text-gray-500 text-center py-8">No identification history yet. Upload and identify some breeds to see them here!</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="cattleTab" class="tab-content hidden">
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="cattleGrid">
+                </div>
+        </div>
+
+        <div id="buffaloTab" class="tab-content hidden">
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="buffaloGrid">
+                </div>
+        </div>
+    </div>
+
+    <div id="tooltip" class="tooltip fixed bg-gray-800 text-white px-3 py-2 rounded-lg text-sm z-50 pointer-events-none"></div>
+
+    <div id="breedModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-6">
+                    <h2 id="modalTitle" class="text-3xl font-bold text-primary"></h2>
+                    <button id="closeModal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                </div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <div id="modalImage" class="w-full h-64 bg-gradient-to-br from-primary-100 to-primary-200 rounded-lg mb-4 flex items-center justify-center text-6xl overflow-hidden">
+                            🐄
+                        </div>
+                        <button id="audioRead" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors mb-4">
+                            🔊 Read Breed Information
+                        </button>
+                        <div class="flex gap-2">
+                            <button id="saveBreed" class="flex-1 bg-primary hover:bg-primary-light text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                💾 Save
+                            </button>
+                            <button id="shareBreed" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                📤 Share
+                            </button>
+                        </div>
+                    </div>
+                    <div id="modalContent">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    // Complete Breed Data
+    const cattleBreeds = [
+        {
+            name: "Amritmahal", nameHi: "अमृतमहल", type: "cattle",
+            origin: "Karnataka", milkYield: "3-5 L/day", category: "low",
+            traits: "Grey color, compact body, strong legs, suitable for draught work",
+            description: "Famous draught breed known for strength and endurance, primarily used for agricultural work",
+            states: ["Karnataka", "Tamil Nadu", "Andhra Pradesh"],
+            history: "Developed in Mysore state for military transport during Tipu Sultan's reign",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQRhS5emUCjaHhYe3XWi3G7MZbYhp53VesuQ&s"
+        },
+        {
+            name: "Bachaur", nameHi: "बछौर", type: "cattle",
+            origin: "Bihar", milkYield: "4-6 L/day", category: "low",
+            traits: "White to light grey color, medium-sized, well-adapted to local conditions",
+            description: "Indigenous breed of Bihar, hardy and well-suited to local climate",
+            states: ["Bihar", "Jharkhand"],
+            history: "Traditional breed of eastern India, maintained by local farmers",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWaST-00ezAs4yuCBQg0FfrpllfxCdxUzhEw&s"
+        },
+        {
+            name: "Bargur", nameHi: "बरगुर", type: "cattle",
+            origin: "Tamil Nadu", milkYield: "2-4 L/day", category: "low",
+            traits: "Small to medium size, grey color, hardy hill breed",
+            description: "Hill breed adapted to hilly terrain of Western Ghats",
+            states: ["Tamil Nadu", "Kerala"],
+            history: "Ancient breed from Bargur hills, known for disease resistance",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS1vkYGA4580EgeyIdhlCXNwobaW2ok1GdRMA&s"
+        },
+        {
+            name: "Dangi", nameHi: "डांगी", type: "cattle",
+            origin: "Maharashtra", milkYield: "4-6 L/day", category: "low",
+            traits: "Compact body, various colors, small horns, hardy hill breed",
+            description: "Hardy hill breed suitable for hilly terrain and drought conditions",
+            states: ["Maharashtra", "Gujarat"],
+            history: "Originated in Dangs region, adapted to hilly forest areas",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQsPuemZ_nb6rTAQS3_SArb9QlfL35kr9pJoQ&s"
+        },
+        {
+            name: "Deoni", nameHi: "देवनी", type: "cattle",
+            origin: "Maharashtra", milkYield: "8-10 L/day", category: "medium",
+            traits: "White with black markings on face and legs, medium to large size",
+            description: "Dual-purpose breed with good milk production and draught capacity",
+            states: ["Maharashtra", "Karnataka", "Andhra Pradesh"],
+            history: "Developed in Deoni region, known for distinctive color pattern",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/large/public/deoni_bull.jpg?itok=i6-S1wwN"
+        },
+        {
+            name: "Gaolao", nameHi: "गावलाव", type: "cattle",
+            origin: "Maharashtra", milkYield: "6-8 L/day", category: "medium",
+            traits: "White color, medium-sized, well-proportioned body",
+            description: "Good dual-purpose breed with moderate milk yield",
+            states: ["Maharashtra", "Madhya Pradesh"],
+            history: "Traditional breed of Vidarbha region",
+            image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcStjTGDP4J3ccAvAE59TmR6h9qj9_ASw7L3NA&s"
+        },
+        {
+            name: "Gir", nameHi: "गिर", type: "cattle",
+            origin: "Gujarat", milkYield: "10-12 L/day", category: "medium",
+            traits: "Distinctive curved horns, reddish-brown color with white patches",
+            description: "Famous for high milk production and heat tolerance, exported worldwide",
+            states: ["Gujarat", "Rajasthan", "Maharashtra"],
+            history: "Originated in Gir forests of Gujarat, one of India's best dairy breeds",
+            image: "https://girorganic.com/cdn/shop/articles/what-is-gir-cow-453725.jpg?v=1673547600"
+        },
+        {
+            name: "Hallikar", nameHi: "हल्लीकर", type: "cattle",
+            origin: "Karnataka", milkYield: "3-5 L/day", category: "low",
+            traits: "Grey color, compact and muscular build, strong legs",
+            description: "Excellent draught breed known for strength and endurance",
+            states: ["Karnataka", "Tamil Nadu"],
+            history: "Traditional ploughing breed of Karnataka, highly valued for farm work",
+            image: "https://upload.wikimedia.org/wikipedia/commons/7/70/Hariana_02.JPG"
+        },
+        {
+            name: "Hariana", nameHi: "हरियाणा", type: "cattle",
+            origin: "Haryana", milkYield: "8-12 L/day", category: "medium",
+            traits: "White to light grey color, medium to large size, well-developed udder",
+            description: "Good dual-purpose breed with decent milk production",
+            states: ["Haryana", "Punjab", "Uttar Pradesh"],
+            history: "Originated in Haryana, important breed for North Indian agriculture",
+            image: "https://upload.wikimedia.org/wikipedia/commons/7/70/Hariana_02.JPG"
+        },
+        {
+            name: "Kangayam", nameHi: "कांगयम", type: "cattle",
+            origin: "Tamil Nadu", milkYield: "3-5 L/day", category: "low",
+            traits: "Red color, compact body, strong and hardy",
+            description: "Excellent draught breed known for power and endurance",
+            states: ["Tamil Nadu", "Kerala"],
+            history: "Developed in Kangayam region, prized for agricultural work",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRirazbUtTsbjCyNd4EPn9tFmM7fodKPRX73A&s"
+        },
+        {
+            name: "Kankrej", nameHi: "कांकरेज", type: "cattle",
+            origin: "Gujarat", milkYield: "8-12 L/day", category: "medium",
+            traits: "Silver-grey color, large body, curved horns, distinctive hump",
+            description: "Dual-purpose breed with good draught capacity and milk production",
+            states: ["Gujarat", "Rajasthan", "Maharashtra"],
+            history: "Originated in Rann of Kutch, adapted to arid conditions",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRptlZnOSx41zobEZOsJIeIIrZpkLgWY-a1hw&s"
+        },
+        {
+            name: "Kenkatha", nameHi: "केनकठा", type: "cattle",
+            origin: "Madhya Pradesh", milkYield: "4-6 L/day", category: "low",
+            traits: "White to grey color, medium-sized, hardy breed",
+            description: "Hardy breed suitable for central Indian conditions",
+            states: ["Madhya Pradesh", "Uttar Pradesh"],
+            history: "Traditional breed of central India",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQO6H3Xjo_yfEz3sbfC0FU8VKZj3jtdgZxmlA&s"
+        },
+        {
+            name: "Kherigarh", nameHi: "खेरीगढ़", type: "cattle",
+            origin: "Uttar Pradesh", milkYield: "6-8 L/day", category: "medium",
+            traits: "White color, medium-sized, good milk production",
+            description: "Good dairy breed with moderate milk yield",
+            states: ["Uttar Pradesh", "Madhya Pradesh"],
+            history: "Developed in Kheri district of Uttar Pradesh",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQICVEGT6IXKQ1IcEl_l4dsxtYMNO95n669LA&s"
+        },
+        {
+            name: "Khillar", nameHi: "खिल्लार", type: "cattle",
+            origin: "Maharashtra", milkYield: "4-6 L/day", category: "low",
+            traits: "Grey color, medium-sized, hardy and drought resistant",
+            description: "Hardy breed adapted to drought-prone areas",
+            states: ["Maharashtra", "Karnataka"],
+            history: "Traditional breed of drought-prone regions",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSNmS6hBo1spUM7LbjRmSKxhWrJHupSxZDr-g&s"
+        },
+        {
+            name: "Krishna Valley", nameHi: "कृष्णा वैली", type: "cattle",
+            origin: "Andhra Pradesh", milkYield: "6-8 L/day", category: "low",
+            traits: "Black color, medium-sized, well-built for draught work",
+            description: "Good draught animal with moderate milk yield",
+            states: ["Andhra Pradesh", "Karnataka"],
+            history: "Developed in Krishna river valley region",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/medium_large/public/krishna_cow.jpg?itok=jM2eUOeq"
+        },
+        {
+            name: "Malvi", nameHi: "मालवी", type: "cattle",
+            origin: "Madhya Pradesh", milkYield: "4-6 L/day", category: "low",
+            traits: "Light grey color, medium-sized, hardy breed",
+            description: "Hardy breed suitable for central Indian plateau",
+            states: ["Madhya Pradesh", "Rajasthan"],
+            history: "Traditional breed of Malwa region",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/medium_large/public/malvi_cow.jpg?itok=9bIjrjSX"
+        },
+        {
+            name: "Mewati", nameHi: "मेवाती", type: "cattle",
+            origin: "Haryana", milkYield: "6-8 L/day", category: "medium",
+            traits: "White to light brown color, medium-sized",
+            description: "Dual-purpose breed with good adaptability",
+            states: ["Haryana", "Rajasthan", "Uttar Pradesh"],
+            history: "Originated in Mewat region",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/large/public/mewati-bull.jpg?itok=LC7vN5p7"
+        },
+        {
+            name: "Nagori", nameHi: "नागौरी", type: "cattle",
+            origin: "Rajasthan", milkYield: "4-6 L/day", category: "low",
+            traits: "White to grey color, large size, long legs",
+            description: "Hardy breed adapted to arid conditions",
+            states: ["Rajasthan", "Gujarat"],
+            history: "Developed in Nagaur district, adapted to desert conditions",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/medium_large/public/nagori_cow.jpg?itok=i37htzCA"
+        },
+        {
+            name: "Nimari", nameHi: "निमाड़ी", type: "cattle",
+            origin: "Madhya Pradesh", milkYield: "4-6 L/day", category: "low",
+            traits: "Grey color, medium-sized, hardy breed",
+            description: "Hardy breed suitable for central Indian conditions",
+            states: ["Madhya Pradesh", "Maharashtra"],
+            history: "Traditional breed of Nimar region",
+            image: "https://breeds.okstate.edu/cattle/site-files/images/nimari.jpg"
+        },
+        {
+            name: "Ongole", nameHi: "ओंगोल", type: "cattle",
+            origin: "Andhra Pradesh", milkYield: "4-6 L/day", category: "low",
+            traits: "White color, large body, short horns, prominent hump",
+            description: "Primarily draught breed with some milk production",
+            states: ["Andhra Pradesh", "Tamil Nadu", "Karnataka"],
+            history: "Originated in Ongole district, exported to many countries",
+            image: "https://thumbs.dreamstime.com/b/brazilian-beef-cattle-bull-nellore-white-cow-inear-tree-selective-focus-head-60411345.jpg"
+        },
+        {
+            name: "Ponwar", nameHi: "पोंवार", type: "cattle",
+            origin: "Madhya Pradesh", milkYield: "3-5 L/day", category: "low",
+            traits: "Various colors, medium-sized, hardy hill breed",
+            description: "Hill breed adapted to central Indian hills",
+            states: ["Madhya Pradesh", "Uttar Pradesh"],
+            history: "Traditional breed of hilly regions",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgjA97hIummMVmdandutaUh_kqiejaGLk3ng&s"
+        },
+        {
+            name: "Punganur", nameHi: "पुंगनूर", type: "cattle",
+            origin: "Andhra Pradesh", milkYield: "3-5 L/day", category: "low",
+            traits: "World's smallest cattle breed, various colors, very compact",
+            description: "World's smallest cattle breed, unique and rare",
+            states: ["Andhra Pradesh", "Tamil Nadu"],
+            history: "Ancient breed from Punganur region, world's smallest cattle",
+            image: "https://nativecattlebreedsofindia.wordpress.com/wp-content/uploads/2019/02/img-20140529-wa0001.jpg"
+        },
+        {
+            name: "Rathi", nameHi: "राठी", type: "cattle",
+            origin: "Rajasthan", milkYield: "6-8 L/day", category: "low",
+            traits: "White with brown patches, medium-sized, heat tolerant",
+            description: "Hardy breed adapted to desert conditions with decent milk yield",
+            states: ["Rajasthan", "Haryana"],
+            history: "Developed in arid regions, known for heat tolerance",
+            image: "https://i.pinimg.com/736x/76/f2/b1/76f2b10636fdfdf354716664e1c90a86.jpg"
+        },
+        {
+            name: "Red Kandhari", nameHi: "लाल कंधारी", type: "cattle",
+            origin: "Maharashtra", milkYield: "4-6 L/day", category: "low",
+            traits: "Red color, medium-sized, hardy breed",
+            description: "Hardy breed with good adaptability to local conditions",
+            states: ["Maharashtra", "Karnataka"],
+            history: "Traditional red-colored breed of western India",
+            image: "https://static.toiimg.com/thumb/imgsize-66686,msid-111361239/111361239.jpg?width=500&resizemode=4"
+        },
+        {
+            name: "Red Sindhi", nameHi: "लाल सिंधी", type: "cattle",
+            origin: "Sindh (now in India)", milkYield: "8-12 L/day", category: "medium",
+            traits: "Deep red color, compact body, small horns, good milk production",
+            description: "Heat tolerant breed with good milk quality and production",
+            states: ["Gujarat", "Rajasthan", "Karnataka"],
+            history: "Migrated from Sindh region, excellent dairy breed",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/medium_large/public/red_sindhi_cow.jpg?itok=Cbt6wHpV"
+        },
+        {
+            name: "Sahiwal", nameHi: "साहीवाल", type: "cattle",
+            origin: "Punjab", milkYield: "12-16 L/day", category: "high",
+            traits: "Reddish-brown color, loose skin, medium-sized horns, excellent milk production",
+            description: "Excellent milk producer, well adapted to hot climate, one of India's best dairy breeds",
+            states: ["Punjab", "Haryana", "Uttar Pradesh"],
+            history: "Originated in Sahiwal district, premier dairy breed of India",
+            image: "https://cpimg.tistatic.com/10495827/b/4/Sahiwal-Cow.jpg"
+        },
+        {
+            name: "Siri", nameHi: "सिरी", type: "cattle",
+            origin: "Sikkim", milkYield: "2-4 L/day", category: "low",
+            traits: "Small size, various colors, adapted to high altitude",
+            description: "High altitude breed adapted to Himalayan conditions",
+            states: ["Sikkim", "West Bengal"],
+            history: "Traditional breed of Sikkim hills",
+            image: "https://nativecattlebreedsofindia.wordpress.com/wp-content/uploads/2019/03/siri2.jpg"
+        },
+        {
+            name: "Tharparkar", nameHi: "थारपारकर", type: "cattle",
+            origin: "Rajasthan", milkYield: "8-10 L/day", category: "medium",
+            traits: "White to light grey color, medium-sized body, heat tolerant",
+            description: "Dual-purpose breed suitable for arid regions with good milk production",
+            states: ["Rajasthan", "Gujarat", "Haryana"],
+            history: "Originated in Thar desert, excellent adaptation to arid conditions",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/medium_large/public/tharparkar_cow.jpg?itok=y3gyAOSI"
+        },
+        {
+            name: "Umblachery", nameHi: "उम्बलाचेरी", type: "cattle",
+            origin: "Tamil Nadu", milkYield: "2-4 L/day", category: "low",
+            traits: "Grey color, compact size, hardy",
+            description: "Hardy breed adapted to coastal conditions",
+            states: ["Tamil Nadu"],
+            history: "Traditional breed of Tamil Nadu coast",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQgiuwJKgshUkYHM_G5zVogE6OcwRcxUg44Tg&s"
+        },
+        {
+            name: "Vechur", nameHi: "वेचूर", type: "cattle",
+            origin: "Kerala", milkYield: "2-3 L/day", category: "low",
+            traits: "Very small size, various colors, high milk fat content",
+            description: "World's smallest cattle breed with highest milk fat content",
+            states: ["Kerala"],
+            history: "Ancient breed from Vechur village, nearly extinct but being conserved",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQHCxVhuHA6TzpZEnZDdBmGDBFQ1l61ahLaWQ&s"
+        },
+        {
+            name: "Motu", nameHi: "मोटू", type: "cattle",
+            origin: "Manipur", milkYield: "2-4 L/day", category: "low",
+            traits: "Small size, hardy, adapted to hilly terrain",
+            description: "Hill breed of northeastern India",
+            states: ["Manipur", "Mizoram"],
+            history: "Traditional breed of northeastern hills",
+            image: "https://esfqc9riepu.exactdn.com/wp-content/uploads/2024/06/Motu-img2-final.jpg?lossy=1&ssl=1"
+        },
+        {
+            name: "Ghumusari", nameHi: "घुमुसरी", type: "cattle",
+            origin: "Odisha", milkYield: "3-5 L/day", category: "low",
+            traits: "Grey color, medium size, hardy breed",
+            description: "Hardy breed adapted to eastern Indian conditions",
+            states: ["Odisha", "West Bengal"],
+            history: "Traditional breed of coastal Odisha",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/medium_large/public/ghumusari_cow.png?itok=TxIv93Rk"
+        },
+        {
+            name: "Binjharpuri", nameHi: "बिंझारपुरी", type: "cattle",
+            origin: "Odisha", milkYield: "4-6 L/day", category: "low",
+            traits: "White to grey color, medium size",
+            description: "Indigenous breed of Odisha with good adaptability",
+            states: ["Odisha"],
+            history: "Developed in Binjharpur region of Odisha",
+            image: "https://www.dairyknowledge.in/sites/default/files/styles/large/public/binjharpuri_bull.png?itok=uEzmEJVO"
+        },
+        {
+            name: "Khariar", nameHi: "खरियार", type: "cattle",
+            origin: "Odisha", milkYield: "3-5 L/day", category: "low",
+            traits: "Grey color, compact body, hardy",
+            description: "Hardy breed suitable for tribal areas",
+            states: ["Odisha", "Chhattisgarh"],
+            history: "Traditional breed of tribal regions",
+            image: "https://dairyknowledge.in/dkp/sites/default/files/styles/large/public/khariar-bull.jpg?itok=mYmFO3Jg"
+        },
+        {
+            name: "Pulikulam", nameHi: "पुलिकुलम", type: "cattle",
+            origin: "Tamil Nadu", milkYield: "2-4 L/day", category: "low",
+            traits: "Grey color, compact size, hardy",
+            description: "Hardy breed adapted to dry conditions",
+            states: ["Tamil Nadu"],
+            history: "Traditional breed of southern Tamil Nadu",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/large/public/pulikulam_bull.jpg?itok=hXFwn5x0"
+        },
+        {
+            name: "Kosali", nameHi: "कोसली", type: "cattle",
+            origin: "Chhattisgarh", milkYield: "4-6 L/day", category: "low",
+            traits: "White to grey color, medium size",
+            description: "Indigenous breed of Chhattisgarh",
+            states: ["Chhattisgarh", "Odisha"],
+            history: "Traditional breed of central India",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/large/public/kosali_bull.jpg?itok=Iusxz1Gu"
+        },
+        {
+            name: "Malnad Gidda", nameHi: "मलनाड गिड्डा", type: "cattle",
+            origin: "Karnataka", milkYield: "3-5 L/day", category: "low",
+            traits: "Small size, various colors, adapted to hills",
+            description: "Hill breed of Western Ghats",
+            states: ["Karnataka"],
+            history: "Traditional breed of Western Ghats region",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/large/public/malnad_bull.jpg?itok=1CUWJHfY"
+        },
+        {
+            name: "Belahi", nameHi: "बेलाही", type: "cattle",
+            origin: "Uttar Pradesh", milkYield: "4-6 L/day", category: "low",
+            traits: "White color, medium size, hardy",
+            description: "Hardy breed of northern India",
+            states: ["Uttar Pradesh", "Bihar"],
+            history: "Traditional breed of Gangetic plains",
+            image: "https://pbs.twimg.com/media/DCmT2NvXkAAOrj-.jpg"
+        },
+        {
+            name: "Gangatiri", nameHi: "गंगातीरी", type: "cattle",
+            origin: "West Bengal", milkYield: "5-7 L/day", category: "medium",
+            traits: "Grey color, medium size, good milk production",
+            description: "Good dairy breed of eastern India",
+            states: ["West Bengal", "Bihar"],
+            history: "Developed along Ganges river banks",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/medium_large/public/gangatiri_cow.jpg?itok=A2PydZc5"
+        },
+        {
+            name: "Badri", nameHi: "बद्री", type: "cattle",
+            origin: "Uttarakhand", milkYield: "3-5 L/day", category: "low",
+            traits: "Small to medium size, adapted to hills",
+            description: "Hill breed adapted to Himalayan conditions",
+            states: ["Uttarakhand", "Himachal Pradesh"],
+            history: "Traditional breed of Himalayan foothills",
+            image: "https://www.dairyknowledge.in/sites/default/files/images/Badri_Bull.jpg"
+        },
+        {
+            name: "Lakhimi", nameHi: "लक्ष्मी", type: "cattle",
+            origin: "Assam", milkYield: "4-6 L/day", category: "low",
+            traits: "Medium size, various colors, hardy",
+            description: "Hardy breed of northeastern India",
+            states: ["Assam", "Meghalaya"],
+            history: "Traditional breed of Assam valley",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSfzfRTVWebmO-E3tWU6oojyz2tznpdB0jaPg&s"
+        },
+        {
+            name: "Ladakhi", nameHi: "लद्दाखी", type: "cattle",
+            origin: "Ladakh", milkYield: "2-4 L/day", category: "low",
+            traits: "Small size, thick coat, adapted to high altitude and cold",
+            description: "High altitude breed adapted to extreme cold conditions",
+            states: ["Ladakh", "Himachal Pradesh"],
+            history: "Ancient breed adapted to high altitude desert conditions",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZWRejYz9eKNbK5Ic1Bq2bzvLL-H5Yg2QlEg&s"
+        },
+        {
+            name: "Konkan Kapila", nameHi: "कोंकण कपिला", type: "cattle",
+            origin: "Maharashtra", milkYield: "4-6 L/day", category: "low",
+            traits: "Brown color, medium size, coastal adaptation",
+            description: "Coastal breed adapted to humid conditions",
+            states: ["Maharashtra", "Goa"],
+            history: "Traditional breed of Konkan coast",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRd6vJuMqN0nK5oHcPnCnCUEBhiYTYqrqNX9g&s"
+        },
+        {
+            name: "Poda Thurpu", nameHi: "पोडा थुरपु", type: "cattle",
+            origin: "Odisha", milkYield: "3-5 L/day", category: "low",
+            traits: "Small size, hardy, tribal breed",
+            description: "Hardy breed of tribal areas",
+            states: ["Odisha"],
+            history: "Traditional breed of tribal communities",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHoPyLVPXbmC_YaRbxpsgcZ48cDSyXqOPmPw&s"
+        },
+        {
+            name: "Nari", nameHi: "नारी", type: "cattle",
+            origin: "Gujarat", milkYield: "4-6 L/day", category: "low",
+            traits: "White color, medium size, hardy",
+            description: "Hardy breed adapted to arid conditions",
+            states: ["Gujarat", "Rajasthan"],
+            history: "Traditional breed of arid regions",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSpVdCFO3n_-OHylJDvoxiJ4qYyd5a8FCcMEg&s"
+        },
+        {
+            name: "Dagri", nameHi: "डागरी", type: "cattle",
+            origin: "Punjab", milkYield: "5-7 L/day", category: "medium",
+            traits: "Various colors, medium size, good milk production",
+            description: "Good dairy breed of northern India",
+            states: ["Punjab", "Himachal Pradesh"],
+            history: "Traditional breed of northern plains",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-88NaSFEX_fB7JzvgI3Cl9hNImHEvui8KDw&s"
+        },
+        {
+            name: "Thutho", nameHi: "थुथो", type: "cattle",
+            origin: "Nagaland", milkYield: "2-4 L/day", category: "low",
+            traits: "Small size, hardy, hill adaptation",
+            description: "Hill breed of northeastern India",
+            states: ["Nagaland", "Manipur"],
+            history: "Traditional breed of Naga hills",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSEdnI7y3uTwySGBLQeQCVFb0_h7xYHr_7rBQ&s"
+        },
+        {
+            name: "Shweta Kapila", nameHi: "श्वेत कपिला", type: "cattle",
+            origin: "Uttar Pradesh", milkYield: "6-8 L/day", category: "medium",
+            traits: "White color, good milk production, medium size",
+            description: "Good dairy breed with white coloration",
+            states: ["Uttar Pradesh", "Bihar"],
+            history: "Developed for improved milk production",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyS0PnhGkdEzXc1TZFtEmP6Qf2DqsoAvRgTA&s"
+        },
+        {
+            name: "Himachali Pahari", nameHi: "हिमाचली पहाड़ी", type: "cattle",
+            origin: "Himachal Pradesh", milkYield: "4-6 L/day", category: "low",
+            traits: "Small to medium size, adapted to hills and cold",
+            description: "Hill breed adapted to Himalayan conditions",
+            states: ["Himachal Pradesh", "Uttarakhand"],
+            history: "Traditional breed of Himalayan hills",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRhypdYT44MEsg_TMxkIZCR1cZyf89UsCCG-g&s"
+        },
+        {
+            name: "Purnea", nameHi: "पूर्णिया", type: "cattle",
+            origin: "Bihar", milkYield: "5-7 L/day", category: "medium",
+            traits: "Medium size, good milk production, hardy",
+            description: "Good dairy breed of eastern India",
+            states: ["Bihar", "West Bengal"],
+            history: "Developed in Purnea district",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRNwa2CPSeYB3fIuSq-OryssAqf7Zjb1R-TIg&s"
+        },
+        {
+            name: "Kathani", nameHi: "कठानी", type: "cattle",
+            origin: "Bihar", milkYield: "4-6 L/day", category: "low",
+            traits: "Medium size, hardy, good adaptation",
+            description: "Hardy breed of eastern India",
+            states: ["Bihar", "Jharkhand"],
+            history: "Traditional breed of Bihar",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjDpI4F5W5gIt-mf11m9cXOWAG6SBYDYmXpw&s"
+        },
+        {
+            name: "Sanchori", nameHi: "सांचोरी", type: "cattle",
+            origin: "Rajasthan", milkYield: "4-6 L/day", category: "low",
+            traits: "White to grey color, medium size, drought resistant",
+            description: "Hardy breed adapted to arid conditions",
+            states: ["Rajasthan", "Gujarat"],
+            history: "Traditional breed of desert regions",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRuOywB6dyURcjU4ESsnodcpVqCgy68yaJ2YA&s"
+        },
+        {
+            name: "Masilum", nameHi: "मसिलुम", type: "cattle",
+            origin: "Mizoram", milkYield: "2-4 L/day", category: "low",
+            traits: "Small size, hardy, hill adaptation",
+            description: "Hill breed of northeastern India",
+            states: ["Mizoram", "Tripura"],
+            history: "Traditional breed of Mizo hills",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRURtXXRK2wsNIWe0kRbRa3NodGV1XHVm9CuA&s"
+        },
+        {
+            name: "Frieswal", nameHi: "फ्रीसवाल", type: "cattle",
+            origin: "India (Synthetic)", milkYield: "15-20 L/day", category: "high",
+            traits: "Black and white patches, large size, high milk production",
+            description: "Synthetic breed developed by crossing Holstein Friesian with Sahiwal",
+            states: ["Punjab", "Haryana", "Uttar Pradesh"],
+            history: "Developed by NDRI Karnal, combines exotic and indigenous traits",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTGdtPmXDa_uTNmf--FlJfWM_UEtA-OEc0EoA&s"
+        }
+    ];
+
+    const buffaloBreeds = [
+        {
+            name: "Bhadawari", nameHi: "भदावरी", type: "buffalo",
+            origin: "Uttar Pradesh", milkYield: "4-6 L/day", category: "low",
+            traits: "Small-sized, light brown to copper color, curved horns",
+            description: "Small breed with rich milk quality, high fat content",
+            states: ["Uttar Pradesh", "Madhya Pradesh"],
+            history: "Traditional breed of Bundelkhand region, known for rich milk",
+            image: "https://4.imimg.com/data4/MY/CR/ANDROID-50887394/product.jpeg"
+        },
+        {
+            name: "Jaffarabadi", nameHi: "जाफराबादी", type: "buffalo",
+            origin: "Gujarat", milkYield: "10-15 L/day", category: "high",
+            traits: "Large body, black color, massive curved horns, heavy build",
+            description: "Heavy breed with good milk production, largest Indian buffalo",
+            states: ["Gujarat", "Rajasthan"],
+            history: "Originated in Jaffarabad, heaviest buffalo breed in India",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTMqJsb4YG3dKUWPWX7y4o6BG9JfQAGwE6Qpg&s"
+        },
+        {
+            name: "Mehsana", nameHi: "मेहसाणा", type: "buffalo",
+            origin: "Gujarat", milkYield: "8-12 L/day", category: "medium",
+            traits: "Black color, medium-sized, well-proportioned, good udder",
+            description: "Crossbred developed for better milk yield and adaptability",
+            states: ["Gujarat", "Rajasthan"],
+            history: "Developed by crossing Murrah and Surti breeds",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQCI--TXBB-Ga76XZRBRStNkqBxijGWRm64sQ&s"
+        },
+        {
+            name: "Murrah", nameHi: "मुर्रा", type: "buffalo",
+            origin: "Haryana", milkYield: "15-20 L/day", category: "high",
+            traits: "Black color, curved horns, heavy body, excellent milk production",
+            description: "World's best dairy buffalo breed, exported globally",
+            states: ["Haryana", "Punjab", "Uttar Pradesh"],
+            history: "Premier dairy buffalo breed, originated in Haryana",
+            image: "https://5.imimg.com/data5/SELLER/Default/2024/1/381585135/DZ/GX/EJ/211034892/high-quality-murrah-buffalo-500x500.png"
+        },
+        {
+            name: "Nagpuri", nameHi: "नागपुरी", type: "buffalo",
+            origin: "Maharashtra", milkYield: "6-8 L/day", category: "low",
+            traits: "Medium-sized, black color, straight horns, hardy",
+            description: "Hardy breed suitable for dry regions with moderate milk yield",
+            states: ["Maharashtra", "Madhya Pradesh"],
+            history: "Traditional breed of Vidarbha region",
+            image: "https://cdn.roysfarm.com/wp-content/uploads/Australian2BBuffalo.jpg"
+        },
+        {
+            name: "Nili-Ravi", nameHi: "नीली-रावी", type: "buffalo",
+            origin: "Punjab", milkYield: "12-18 L/day", category: "high",
+            traits: "Black color with white markings, wall eyes, good milk production",
+            description: "Excellent milk producer with distinctive white markings",
+            states: ["Punjab", "Haryana"],
+            history: "Originated from Ravi river region, excellent dairy breed",
+            image: "https://www.nativebreed.org/wp-content/uploads/2020/06/nilli-ravi-e1616966308314-1536x1155.jpeg"
+        },
+        {
+            name: "Pandharpuri", nameHi: "पंढरपुरी", type: "buffalo",
+            origin: "Maharashtra", milkYield: "5-7 L/day", category: "low",
+            traits: "Medium size, black color, hardy breed",
+            description: "Hardy breed adapted to semi-arid conditions",
+            states: ["Maharashtra", "Karnataka"],
+            history: "Traditional breed of Pandharpur region",
+            image: "https://www.dairyknowledge.in/sites/default/files/styles/medium_large/public/pandharpuri_buffalo.jpg?itok=o-D5OZOe"
+        },
+        {
+            name: "Surti", nameHi: "सूरती", type: "buffalo",
+            origin: "Gujarat", milkYield: "8-12 L/day", category: "medium",
+            traits: "Black color, medium-sized, curved horns, compact body",
+            description: "Good milk producer adapted to hot climate",
+            states: ["Gujarat", "Rajasthan", "Maharashtra"],
+            history: "Originated in Surat region, good dairy breed",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/medium_large/public/surti-buffalo.jpg?itok=MHkDFB1Q"
+        },
+        {
+            name: "Toda", nameHi: "तोडा", type: "buffalo",
+            origin: "Tamil Nadu", milkYield: "3-5 L/day", category: "low",
+            traits: "Small-sized, reddish-brown color, curved horns",
+            description: "Hill breed with unique characteristics, maintained by Toda tribe",
+            states: ["Tamil Nadu"],
+            history: "Sacred breed of Toda tribe in Nilgiri hills",
+            image: "https://pratheep.com/wp-content/uploads/2012/10/Toda-Buffello.jpg"
+        },
+        {
+            name: "Banni", nameHi: "बन्नी", type: "buffalo",
+            origin: "Gujarat", milkYield: "12-16 L/day", category: "high",
+            traits: "Large size, black color, excellent milk production",
+            description: "High milk producing breed adapted to marshy conditions",
+            states: ["Gujarat"],
+            history: "Developed in Banni grasslands of Kutch",
+            image: "https://5.imimg.com/data5/ANDROID/Default/2024/4/413327534/HX/ME/XB/75284816/product-jpeg-500x500.jpg"
+        },
+        {
+            name: "Chilika", nameHi: "चिलिका", type: "buffalo",
+            origin: "Odisha", milkYield: "4-6 L/day", category: "low",
+            traits: "Medium size, grey to black color, adapted to coastal areas",
+            description: "Coastal breed adapted to marshy and saline conditions",
+            states: ["Odisha"],
+            history: "Traditional breed around Chilika lake",
+            image: "https://www.dairyknowledge.in/sites/default/files/styles/medium_large/public/chilka.jpg?itok=oAlrAcCl"
+        },
+        {
+            name: "Kalahandi", nameHi: "कलाहांडी", type: "buffalo",
+            origin: "Odisha", milkYield: "5-7 L/day", category: "medium",
+            traits: "Medium size, black color, hardy breed",
+            description: "Hardy breed adapted to tribal areas",
+            states: ["Odisha", "Chhattisgarh"],
+            history: "Traditional breed of Kalahandi district",
+            image: "https://www.dairyknowledge.in/dkp/sites/default/files/styles/medium_large/public/kalahandi_buffalo.jpg?itok=K3UcK5Kw"
+        },
+        {
+            name: "Luit", nameHi: "लुइत", type: "buffalo",
+            origin: "Assam", milkYield: "3-5 L/day", category: "low",
+            traits: "Small to medium size, adapted to swampy conditions",
+            description: "Swamp buffalo adapted to northeastern conditions",
+            states: ["Assam", "Arunachal Pradesh"],
+            history: "Traditional swamp buffalo of Brahmaputra valley",
+            image: "https://www.animalsss.com/media/uploads/2021/10/20/chhattisgarhi.jpg"
+        },
+        {
+            name: "Bargur", nameHi: "बरगुर", type: "buffalo",
+            origin: "Tamil Nadu", milkYield: "4-6 L/day", category: "low",
+            traits: "Medium size, grey color, hill adaptation",
+            description: "Hill breed adapted to Western Ghats",
+            states: ["Tamil Nadu"],
+            history: "Traditional breed of Bargur hills",
+            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwPpwlaFMd6DkA-mYKujLLHoT_Wznk1di3Aw&s"
+        },
+        {
+            name: "Chhattisgarhi", nameHi: "छत्तीसगढ़ी", type: "buffalo",
+            origin: "Chhattisgarh", milkYield: "5-7 L/day", category: "medium",
+            traits: "Medium size, black color, hardy",
+            description: "Hardy breed adapted to central Indian conditions",
+            states: ["Chhattisgarh", "Madhya Pradesh"],
+            history: "Traditional breed of Chhattisgarh plains",
+            image: "https://indianmasterminds.com/wp-content/uploads/2021/11/images-2021-11-07T130906.246-678x419.jpeg"
+        },
+        {
+            name: "Gojri", nameHi: "गुज्जरी", type: "buffalo",
+            origin: "Jammu & Kashmir", milkYield: "4-6 L/day", category: "low",
+            traits: "Medium size, adapted to hills and cold climate",
+            description: "Hill breed maintained by Gujjar community",
+            states: ["Jammu & Kashmir", "Himachal Pradesh"],
+            history: "Traditional breed of Gujjar pastoralists",
+            image: "https://www.dairyknowledge.in/sites/default/files/images/gojri_buffalo.jpg"
+        },
+        {
+            name: "Dharwadi", nameHi: "धारवाड़ी", type: "buffalo",
+            origin: "Karnataka", milkYield: "6-8 L/day", category: "medium",
+            traits: "Medium size, black color, good milk production",
+            description: "Good dairy breed of southern India",
+            states: ["Karnataka", "Maharashtra"],
+            history: "Traditional breed of Dharwad region",
+            image: "https://aapniagri.com/static/c1e/client/114513/migrated/31d0f19129e4beade2ed16a2f1005a21.jpg"
+        },
+        {
+            name: "Manda", nameHi: "मांडा", type: "buffalo",
+            origin: "Odisha", milkYield: "4-6 L/day", category: "low",
+            traits: "Small to medium size, hardy, tribal breed",
+            description: "Hardy breed maintained by tribal communities",
+            states: ["Odisha", "Jharkhand"],
+            history: "Traditional breed of tribal areas",
+            image: "https://png.pngtree.com/background/20230616/original/pngtree-water-buffalo-savannah-picture-image_3643613.jpg"
+        },
+        {
+            name: "Purnathadi", nameHi: "पूर्णथाडी", type: "buffalo",
+            origin: "Maharashtra", milkYield: "5-7 L/day", category: "medium",
+            traits: "Medium size, black color, good adaptation",
+            description: "Hardy breed with moderate milk production",
+            states: ["Maharashtra", "Karnataka"],
+            history: "Traditional breed of western Maharashtra",
+            image: " https://static.toiimg.com/thumb/msid-94801072,imgsize-1226333,width-400,resizemode-4/94801072.jpg"
+        },
+        {
+            name: "Marathwadi", nameHi: "मराठवाडी", type: "buffalo",
+            origin: "Maharashtra", milkYield: "6-8 L/day", category: "medium",
+            traits: "Medium to large size, black color, good milk yield",
+            description: "Good dairy breed of Marathwada region",
+            states: ["Maharashtra"],
+            history: "Traditional breed of Marathwada region",
+            image: "https://cf-img-a-in.tosshub.com/sites/visualstory/wp/2023/11/Marathwadi-buffalo.jpg?size=*:900"
+        },
+        {
+            name: "Jerangi", nameHi: "जेरंगी", type: "buffalo",
+            origin: "Assam", milkYield: "3-5 L/day", category: "low",
+            traits: "Small size, adapted to swampy conditions",
+            description: "Swamp buffalo of northeastern India",
+            states: ["Assam", "Meghalaya"],
+            history: "Traditional swamp buffalo breed",
+            image: " https://www.worldatlas.com/r/w1200/upload/52/eb/00/bison-526805-1280.jpg"
+        }
+    ];
+
+    // Application State
+    let audioEnabled = false;
+    let speechSynthesis = window.speechSynthesis;
+    let identificationHistory = JSON.parse(localStorage.getItem('breedHistory') || '[]');
+    let currentBreed = null;
+    let currentLanguage = 'en';
+    let allBreeds = [...cattleBreeds, ...buffaloBreeds];
+    let filteredResults = [];
+    let cameraStream = null;
+    let currentFacingMode = 'environment';
+
+    // Language Translation System
+    const translations = {
+        en: {
+            title: "Indian Livestock Identification System",
+            subtitle: "भारतीय पशुधन पहचान प्रणाली",
+            photoUpload: "Photo Upload & AI Identification",
+            cattleBreeds: "Cattle Breeds (54)",
+            buffaloBreeds: "Buffalo Breeds (21)",
+            searchFilter: "Search & Filter",
+            history: "History",
+            uploadText: "Click to upload or drag & drop",
+            fileSupport: "Supports JPG, PNG, WebP (Max 10MB)",
+            takePhoto: "📸 Take Photo",
+            capturePhoto: "✅ Capture Photo",
+            switchCamera: "🔄 Switch Camera",
+            identifyBreed: "Identify Breed with AI",
+            saveResult: "Save Result",
+            shareResult: "Share",
+            noHistory: "No identification history yet. Upload and identify some breeds to see them here!",
+            searchPlaceholder: "Search breeds...",
+            allStates: "All States",
+            allYields: "All Milk Yields",
+            allTypes: "All Types",
+            cattleOnly: "Cattle Only",
+            buffaloOnly: "Buffalo Only",
+            highYield: "High (>15L/day)",
+            mediumYield: "Medium (8-15L/day)",
+            lowYield: "Low (<8L/day)",
+            searchResults: "Search Results",
+            showingAll: "Showing all",
+            found: "Found",
+            breeds: "breeds",
+            matchingCriteria: "matching your criteria",
+            origin: "Origin",
+            milkYield: "Milk Yield",
+            states: "States",
+            listen: "Listen",
+            basicInfo: "Basic Information",
+            type: "Type",
+            category: "Category",
+            identificationTraits: "Identification Traits",
+            description: "Description",
+            geographicDistribution: "Geographic Distribution",
+            historicalBackground: "Historical Background",
+            cattle: "Cattle",
+            buffalo: "Buffalo",
+            readBreedInfo: "Read Breed Information",
+            save: "Save",
+            share: "Share",
+            aiConfidence: "AI Confidence Score",
+            identifiedAs: "Identified as",
+            confidence: "confidence",
+            viewDetails: "View Details",
+            remove: "Remove",
+            audioSupport: "Audio Support",
+            disableAudio: "Disable Audio"
+        },
+        hi: {
+            title: "भारतीय पशुधन पहचान प्रणाली",
+            subtitle: "Indian Livestock Identification System",
+            photoUpload: "फोटो अपलोड और AI पहचान",
+            cattleBreeds: "गाय की नस्लें (54)",
+            buffaloBreeds: "भैंस की नस्लें (21)",
+            searchFilter: "खोज और फिल्टर",
+            history: "इतिहास",
+            uploadText: "अपलोड करने के लिए क्लिक करें या खींचें और छोड़ें",
+            fileSupport: "JPG, PNG, WebP समर्थित (अधिकतम 10MB)",
+            takePhoto: "📸 फोटो लें",
+            capturePhoto: "✅ फोटो कैप्चर करें",
+            switchCamera: "🔄 कैमरा स्विच करें",
+            identifyBreed: "AI से नस्ल की पहचान करें",
+            saveResult: "परिणाम सहेजें",
+            shareResult: "साझा करें",
+            noHistory: "अभी तक कोई पहचान इतिहास नहीं है। यहाँ देखने के लिए कुछ नस्लों को अपलोड और पहचानें!",
+            searchPlaceholder: "नस्लों की खोज करें...",
+            allStates: "सभी राज्य",
+            allYields: "सभी दूध उत्पादन",
+            allTypes: "सभी प्रकार",
+            cattleOnly: "केवल गाय",
+            buffaloOnly: "केवल भैंस",
+            highYield: "उच्च (>15L/दिन)",
+            mediumYield: "मध्यम (8-15L/दिन)",
+            lowYield: "कम (<8L/दिन)",
+            searchResults: "खोज परिणाम",
+            showingAll: "सभी दिखा रहे हैं",
+            found: "मिली",
+            breeds: "नस्लें",
+            matchingCriteria: "आपके मानदंडों से मेल खाती हैं",
+            origin: "मूल स्थान",
+            milkYield: "दूध उत्पादन",
+            states: "राज्य",
+            listen: "सुनें",
+            basicInfo: "बुनियादी जानकारी",
+            type: "प्रकार",
+            category: "श्रेणी",
+            identificationTraits: "पहचान की विशेषताएं",
+            description: "विवरण",
+            geographicDistribution: "भौगोलिक वितरण",
+            historicalBackground: "ऐतिहासिक पृष्ठभूमि",
+            cattle: "गाय",
+            buffalo: "भैंस",
+            readBreedInfo: "नस्ल की जानकारी पढ़ें",
+            save: "सहेजें",
+            share: "साझा करें",
+            aiConfidence: "AI विश्वास स्कोर",
+            identifiedAs: "के रूप में पहचाना गया",
+            confidence: "विश्वास",
+            viewDetails: "विवरण देखें",
+            remove: "हटाएं",
+            audioSupport: "ऑडियो सहायता",
+            disableAudio: "ऑडियो बंद करें"
+        }
+    };
+
+    // Audio Support Functions
+    function speak(text, lang = null) {
+        if (!audioEnabled || !speechSynthesis) return;
+       
+        speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang || getLanguageCode(currentLanguage);
+        utterance.rate = 0.8;
+        speechSynthesis.speak(utterance);
+    }
+
+    function updateLanguage(lang) {
+        currentLanguage = lang;
+        const t = translations[lang] || translations.en;
+       
+        // Update header
+        document.querySelector('h1').innerHTML = `🐄 ${t.title}`;
+        document.querySelector('h1').nextElementSibling.textContent = t.subtitle;
+       
+        // Update tab buttons
+        document.querySelector('[data-tab="upload"]').innerHTML = `📸 ${t.photoUpload}`;
+        document.querySelector('[data-tab="cattle"]').innerHTML = `🐄 ${t.cattleBreeds}`;
+        document.querySelector('[data-tab="buffalo"]').innerHTML = `🐃 ${t.buffaloBreeds}`;
+        document.querySelector('[data-tab="search"]').innerHTML = `🔍 ${t.searchFilter}`;
+        document.querySelector('[data-tab="history"]').innerHTML = `📋 ${t.history}`;
+       
+        // Update upload section
+        document.querySelector('#dropZone p:first-of-type').textContent = t.uploadText;
+        document.querySelector('#dropZone p:last-of-type').textContent = t.fileSupport;
+        document.getElementById('cameraToggle').innerHTML = t.takePhoto;
+        document.getElementById('captureBtn').innerHTML = t.capturePhoto;
+        document.getElementById('toggleCameraBtn').innerHTML = t.switchCamera;
+        if (document.querySelector('#identifyBtn')) {
+            document.querySelector('#identifyBtn').innerHTML = `🔍 ${t.identifyBreed}`;
+        }
+        if (document.querySelector('#saveResult')) {
+            document.querySelector('#saveResult').innerHTML = `💾 ${t.saveResult}`;
+        }
+        if (document.querySelector('#shareResult')) {
+            document.querySelector('#shareResult').innerHTML = `📤 ${t.shareResult}`;
+        }
+       
+        // Update search section
+        document.querySelector('#searchInput').placeholder = t.searchPlaceholder;
+        document.querySelector('#stateFilter option[value=""]').textContent = t.allStates;
+        document.querySelector('#yieldFilter option[value=""]').textContent = t.allYields;
+        document.querySelector('#typeFilter option[value=""]').textContent = t.allTypes;
+        document.querySelector('#typeFilter option[value="cattle"]').textContent = t.cattleOnly;
+        document.querySelector('#typeFilter option[value="buffalo"]').textContent = t.buffaloOnly;
+        document.querySelector('#yieldFilter option[value="high"]').textContent = t.highYield;
+        document.querySelector('#yieldFilter option[value="medium"]').textContent = t.mediumYield;
+        document.querySelector('#yieldFilter option[value="low"]').textContent = t.lowYield;
+       
+        // Update search results header
+        document.querySelector('#searchResults h2').innerHTML = `🔍 ${t.searchResults}`;
+       
+        // Update audio button
+        const audioBtn = document.getElementById('audioToggle');
+        audioBtn.textContent = audioEnabled ? `🔇 ${t.disableAudio}` : `🔊 ${t.audioSupport}`;
+       
+        // Update modal elements
+        if (document.querySelector('#audioRead')) {
+            document.querySelector('#audioRead').innerHTML = `🔊 ${t.readBreedInfo}`;
+        }
+        if (document.querySelector('#saveBreed')) {
+            document.querySelector('#saveBreed').innerHTML = `💾 ${t.save}`;
+        }
+        if (document.querySelector('#shareBreed')) {
+            document.querySelector('#shareBreed').innerHTML = `📤 ${t.share}`;
+        }
+       
+        // Update confidence section if visible
+        if (document.querySelector('#confidenceSection h3')) {
+            document.querySelector('#confidenceSection h3').textContent = t.aiConfidence;
+        }
+       
+        renderBreeds();
+        renderHistory();
+       
+        updateResultCount();
+    }
+
+    function getLanguageCode(lang) {
+        const langMap = {
+            'hi': 'hi-IN', 'en': 'en-IN', 'bn': 'bn-IN', 'te': 'te-IN',
+            'mr': 'mr-IN', 'ta': 'ta-IN', 'gu': 'gu-IN', 'kn': 'kn-IN',
+            'ml': 'ml-IN', 'pa': 'pa-IN', 'or': 'or-IN', 'as': 'as-IN',
+            'ur': 'ur-IN', 'sa': 'sa-IN', 'sd': 'sd-IN', 'ne': 'ne-IN',
+            'ks': 'ks-IN', 'doi': 'hi-IN', 'mni': 'bn-IN', 'sat': 'hi-IN',
+            'mai': 'hi-IN', 'kok': 'hi-IN', 'brx': 'hi-IN'
+        };
+        return langMap[lang] || 'en-IN';
+    }
+
+    // Tooltip Functions
+    function showTooltip(element, text) {
+        const tooltip = document.getElementById('tooltip');
+        tooltip.textContent = text;
+        tooltip.classList.add('show');
+       
+        const rect = element.getBoundingClientRect();
+        tooltip.style.left = rect.left + 'px';
+        tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
+       
+        if (audioEnabled) {
+            speak(text);
+        }
+    }
+
+    function hideTooltip() {
+        document.getElementById('tooltip').classList.remove('show');
+    }
+
+    function init() {
+        setupEventListeners();
+        renderBreeds();
+        renderHistory();
+        setupAccessibility();
+       
+        filteredResults = allBreeds;
+        renderBreedGrid(filteredResults, 'searchGrid');
+        document.getElementById('resultCount').textContent = `Showing all ${allBreeds.length} breeds`;
+    }
+
+    function setupEventListeners() {
+        document.getElementById('audioToggle').addEventListener('click', () => {
+            audioEnabled = !audioEnabled;
+            const btn = document.getElementById('audioToggle');
+            const t = translations[currentLanguage] || translations.en;
+            btn.textContent = audioEnabled ? `🔇 ${t.disableAudio}` : `🔊 ${t.audioSupport}`;
+            btn.className = audioEnabled ?
+                'bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors shadow-md' :
+                'bg-white text-primary px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors shadow-md';
+           
+            if (audioEnabled) {
+                speak('Audio support enabled.');
+            }
+        });
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tab = e.target.dataset.tab;
+                switchTab(tab);
+                if (audioEnabled) {
+                    speak(`Switched to ${tab} section`);
+                }
+            });
+        });
+
+        setupFileUpload();
+
+        document.getElementById('searchInput').addEventListener('input', filterBreeds);
+        document.getElementById('stateFilter').addEventListener('change', filterBreeds);
+        document.getElementById('yieldFilter').addEventListener('change', filterBreeds);
+        document.getElementById('typeFilter').addEventListener('change', filterBreeds);
+
+        document.getElementById('closeModal').addEventListener('click', closeModal);
+        document.getElementById('breedModal').addEventListener('click', (e) => {
+            if (e.target.id === 'breedModal') closeModal();
+        });
+       
+        document.getElementById('cameraToggle').addEventListener('click', () => setupCameraAndCapture(currentFacingMode));
+        document.getElementById('toggleCameraBtn').addEventListener('click', toggleCamera);
+       
+        document.getElementById('languageSelect').addEventListener('change', (e) => {
+            const lang = e.target.value;
+            updateLanguage(lang);
+            if (audioEnabled) {
+                speak(`Language changed to ${e.target.selectedOptions[0].text}`, getLanguageCode(lang));
+            }
+        });
+    }
+
+    function setupFileUpload() {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+       
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-primary-400');
+        });
+       
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-primary-400');
+        });
+       
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-primary-400');
+            handleFileUpload(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFileUpload(e.target.files[0]);
+        });
+    }
+
+    function handleFileUpload(file) {
+        if (!file || !file.type.startsWith('image/')) {
+            alert('Please select a valid image file');
+            return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File size should be less than 10MB');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const preview = document.getElementById('uploadPreview');
+            const img = document.getElementById('previewImage');
+            img.src = e.target.result;
+            preview.classList.remove('hidden');
+           
+            if (audioEnabled) {
+                speak('Image uploaded successfully. Click the identify breed button to analyze the image using AI.');
+            }
+
+            document.getElementById('identifyBtn').onclick = () => identifyBreed(e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function identifyBreed(imageData) {
+    // For local testing, use your local API endpoint
+    const aiApiEndpoint = "http://127.0.0.1:5000/predict";
+
+    // You would send the image data to the AI service
+    const response = await fetch(aiApiEndpoint, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ image: imageData })
+    });
+
+    const result = await response.json();
+
+    // Now, instead of a random breed, use the real result from the API
+    const identifiedBreed = allBreeds.find(b => b.name === result.breedName);
+
+    const confidence = result.confidenceScore;
+    const confidenceSection = document.getElementById('confidenceSection');
+    const confidenceBar = document.getElementById('confidenceBar');
+    const confidenceText = document.getElementById('confidenceText');
+   
+    confidenceSection.classList.remove('hidden');
+   
+    setTimeout(() => {
+        confidenceBar.style.width = confidence + '%';
+        confidenceText.textContent = `${confidence}% confidence - Identified as ${identifiedBreed.name}`;
+    }, 500);
+
+    // ... The rest of your existing code to show the modal would go here.
+}
+
+    function setupCameraAndCapture(facingMode) {
+        const cameraFeed = document.getElementById('cameraFeed');
+        const cameraCanvas = document.getElementById('cameraCanvas');
+        const captureBtn = document.getElementById('captureBtn');
+        const toggleCameraBtn = document.getElementById('toggleCameraBtn');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const previewImage = document.getElementById('previewImage');
+
+        cameraFeed.classList.remove('hidden');
+        captureBtn.classList.remove('hidden');
+        toggleCameraBtn.classList.remove('hidden');
+
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+        }
+
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: facingMode },
+            audio: false
+        })
+        .then(function(stream) {
+            cameraStream = stream;
+            cameraFeed.srcObject = stream;
+            cameraFeed.play();
+        })
+        .catch(function(err) {
+            console.error("Error accessing camera:", err);
+            alert("Unable to access camera. Please check permissions.");
+            cameraFeed.classList.add('hidden');
+            captureBtn.classList.add('hidden');
+            toggleCameraBtn.classList.add('hidden');
+        });
+
+        captureBtn.onclick = function() {
+            const context = cameraCanvas.getContext('2d');
+            cameraCanvas.width = cameraFeed.videoWidth;
+            cameraCanvas.height = cameraFeed.videoHeight;
+            context.drawImage(cameraFeed, 0, 0, cameraCanvas.width, cameraCanvas.height);
+
+            const imageData = cameraCanvas.toDataURL('image/jpeg');
+            previewImage.src = imageData;
+            uploadPreview.classList.remove('hidden');
+            cameraFeed.classList.add('hidden');
+            captureBtn.classList.add('hidden');
+            toggleCameraBtn.classList.add('hidden');
+
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+
+            document.getElementById('identifyBtn').onclick = () => identifyBreed(imageData);
+        };
+    }
+
+    function toggleCamera() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+        }
+       
+        currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+       
+        setupCameraAndCapture(currentFacingMode);
+    }
+
+    function saveIdentification(breed) {
+        identificationHistory.unshift(breed);
+        if (identificationHistory.length > 50) {
+            identificationHistory = identificationHistory.slice(0, 50);
+        }
+        localStorage.setItem('breedHistory', JSON.stringify(identificationHistory));
+        renderHistory();
+       
+        if (audioEnabled) {
+            speak('Identification result saved to history');
+        }
+    }
+
+    function shareResult(breed) {
+        if (navigator.share) {
+            navigator.share({
+                title: `${breed.name} Breed Identification`,
+                text: `Identified ${breed.name} breed with ${breed.confidence}% confidence. ${breed.description}`,
+                url: window.location.href
+            });
+        } else {
+            const shareText = `Identified ${breed.name} breed with ${breed.confidence}% confidence. ${breed.description}`;
+            navigator.clipboard.writeText(shareText).then(() => {
+                alert('Breed information copied to clipboard!');
+            });
+        }
+       
+        if (audioEnabled) {
+            speak('Breed information shared successfully');
+        }
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active', 'bg-primary', 'text-white');
+            btn.classList.add('bg-gray-200', 'text-primary');
+        });
+        const activeBtn = document.querySelector(`[data-tab="${tab}"]`);
+        activeBtn.classList.add('active', 'bg-primary', 'text-white');
+        activeBtn.classList.remove('bg-gray-200', 'text-primary');
+
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+        document.getElementById(`${tab}Tab`).classList.remove('hidden');
+    }
+
+    function renderBreeds() {
+        renderBreedGrid(cattleBreeds, 'cattleGrid');
+        renderBreedGrid(buffaloBreeds, 'buffaloGrid');
+    }
+
+    function renderBreedGrid(breeds, containerId) {
+        const container = document.getElementById(containerId);
+        const t = translations[currentLanguage] || translations.en;
+       
+        container.innerHTML = breeds.map(breed => `
+            <div class="breed-card card-hover rounded-xl p-6 cursor-pointer"
+                 onclick="showBreedModal(${JSON.stringify(breed).replace(/"/g, '&quot;')})"
+                 onmouseover="showTooltip(this, 'Click to view detailed information about ${breed.name} breed')"
+                 onmouseout="hideTooltip()">
+                <div class="text-center mb-4">
+                    <div class="w-full h-32 mb-3 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                        <img src="${breed.image}" alt="${breed.name}"
+                             class="w-full h-full object-fill"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                             loading="lazy">
+                        <div class="text-4xl hidden">${breed.type === 'cattle' ? '🐄' : '🐃'}</div>
+                    </div>
+                    <h3 class="text-xl font-bold text-primary">${breed.name}</h3>
+                    <p class="text-gray-600">${breed.nameHi}</p>
+                </div>
+                <div class="space-y-2 text-sm">
+                    <p><span class="text-primary font-semibold">${t.origin}:</span> ${breed.origin}</p>
+                    <p><span class="text-primary font-semibold">${t.milkYield}:</span> ${breed.milkYield}</p>
+                    <p><span class="text-primary font-semibold">${t.states}:</span> ${breed.states.slice(0, 2).join(', ')}</p>
+                </div>
+                <button class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        onclick="event.stopPropagation(); speakBreed('${breed.name}', '${breed.description}')"
+                        onmouseover="showTooltip(this, 'Listen to breed information')"
+                        onmouseout="hideTooltip()">
+                    🔊 ${t.listen}
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function speakBreed(name, description) {
+        if (audioEnabled) {
+            speak(`${name} breed. ${description}`);
+        } else {
+            alert('Please enable audio support first');
+        }
+    }
+
+    function showBreedModal(breed) {
+        const modal = document.getElementById('breedModal');
+        const title = document.getElementById('modalTitle');
+        const content = document.getElementById('modalContent');
+        const modalImage = document.getElementById('modalImage');
+       
+        title.textContent = `${breed.name} (${breed.nameHi})`;
+       
+        modalImage.innerHTML = `
+            <img src="${breed.image}" alt="${breed.name}"
+                 class="w-full h-full object-fill rounded-lg"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="text-6xl ${breed.type === 'cattle' ? '🐄' : '🐃'} hidden">
+                ${breed.type === 'cattle' ? '🐄' : '🐃'}
+            </div>
+        `;
+       
+        const t = translations[currentLanguage] || translations.en;
+       
+        content.innerHTML = `
+            <div class="space-y-6">
+                <div class="bg-primary-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-primary mb-3">📋 ${t.basicInfo}</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <p><strong>${t.type}:</strong> ${breed.type === 'cattle' ? t.cattle : t.buffalo}</p>
+                        <p><strong>${t.origin}:</strong> ${breed.origin}</p>
+                        <p><strong>${t.milkYield}:</strong> ${breed.milkYield}</p>
+                        <p><strong>${t.category}:</strong> ${breed.category.charAt(0).toUpperCase() + breed.category.slice(1)}</p>
+                    </div>
+                </div>
+               
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-primary mb-3">🔍 ${t.identificationTraits}</h3>
+                    <p class="text-gray-700">${breed.traits}</p>
+                </div>
+               
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-primary mb-3">📖 ${t.description}</h3>
+                    <p class="text-gray-700">${breed.description}</p>
+                </div>
+               
+                <div class="bg-yellow-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-primary mb-3">📍 ${t.geographicDistribution}</h3>
+                    <div class="flex flex-wrap gap-2">
+                        ${breed.states.map(state => `<span class="bg-primary text-white px-3 py-1 rounded-full text-sm">${state}</span>`).join('')}
+                    </div>
+                </div>
+               
+                <div class="bg-purple-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-primary mb-3">📚 ${t.historicalBackground}</h3>
+                    <p class="text-gray-700">${breed.history}</p>
+                </div>
+            </div>
+        `;
+       
+        modal.classList.remove('hidden');
+       
+        document.getElementById('audioRead').onclick = () => {
+            if (audioEnabled) {
+                const text = `${breed.name} breed from ${breed.origin}. ${breed.description}. Identification traits: ${breed.traits}. Milk yield: ${breed.milkYield}. Found in states: ${breed.states.join(', ')}. Historical background: ${breed.history}`;
+                speak(text);
+            } else {
+                alert('Please enable audio support first');
+            }
+        };
+
+        document.getElementById('saveBreed').onclick = () => {
+            const breedData = { ...breed, timestamp: new Date(), type: 'manual' };
+            saveIdentification(breedData);
+        };
+
+        document.getElementById('shareBreed').onclick = () => {
+            shareResult(breed);
+        };
+    }
+
+    function closeModal() {
+        document.getElementById('breedModal').classList.add('hidden');
+        speechSynthesis.cancel();
+    }
+
+    function updateResultCount() {
+        const t = translations[currentLanguage] || translations.en;
+        const resultCount = document.getElementById('resultCount');
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const stateFilter = document.getElementById('stateFilter').value;
+        const yieldFilter = document.getElementById('yieldFilter').value;
+        const typeFilter = document.getElementById('typeFilter').value;
+       
+        if (searchTerm || stateFilter || yieldFilter || typeFilter) {
+            resultCount.textContent = `${t.found} ${filteredResults.length} ${t.breeds}`;
+        } else {
+            resultCount.textContent = `${t.showingAll} ${allBreeds.length} ${t.breeds}`;
+        }
+    }
+
+    function filterBreeds() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const stateFilter = document.getElementById('stateFilter').value;
+        const yieldFilter = document.getElementById('yieldFilter').value;
+        const typeFilter = document.getElementById('typeFilter').value;
+       
+        filteredResults = allBreeds.filter(breed => {
+            const matchesSearch = breed.name.toLowerCase().includes(searchTerm) ||
+                                 breed.nameHi.includes(searchTerm) ||
+                                 breed.traits.toLowerCase().includes(searchTerm) ||
+                                 breed.description.toLowerCase().includes(searchTerm);
+            const matchesState = !stateFilter || breed.states.includes(stateFilter);
+            const matchesYield = !yieldFilter || breed.category === yieldFilter;
+            const matchesType = !typeFilter || breed.type === typeFilter;
+           
+            return matchesSearch && matchesState && matchesYield && matchesType;
+        });
+       
+        renderBreedGrid(filteredResults, 'searchGrid');
+       
+        updateResultCount();
+       
+        if (audioEnabled && (searchTerm || stateFilter || yieldFilter || typeFilter)) {
+            const t = translations[currentLanguage] || translations.en;
+            speak(`${t.found} ${filteredResults.length} ${t.breeds} ${t.matchingCriteria}.`);
+        }
+    }
+
+    function renderHistory() {
+        const historyList = document.getElementById('historyList');
+        const t = translations[currentLanguage] || translations.en;
+       
+        if (identificationHistory.length === 0) {
+            historyList.innerHTML = `<p class="text-gray-500 text-center py-8">${t.noHistory}</p>`;
+            return;
+        }
+
+        historyList.innerHTML = identificationHistory.map((item, index) => `
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-lg font-semibold text-primary">${item.name} (${item.nameHi})</h3>
+                    <span class="text-sm text-gray-500">${new Date(item.timestamp).toLocaleDateString()}</span>
+                </div>
+                ${item.confidence ? `<p class="text-sm text-green-600 mb-2">AI Confidence: ${item.confidence}%</p>` : ''}
+                <p class="text-sm text-gray-700 mb-3">${item.description}</p>
+                <div class="flex gap-2">
+                    <button onclick="showBreedModal(${JSON.stringify(item).replace(/"/g, '&quot;')})"
+                            class="bg-primary hover:bg-primary-light text-white px-3 py-1 rounded text-sm transition-colors">
+                        View Details
+                    </button>
+                    <button onclick="removeFromHistory(${index})"
+                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                        Remove
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function removeFromHistory(index) {
+        identificationHistory.splice(index, 1);
+        localStorage.setItem('breedHistory', JSON.stringify(identificationHistory));
+        renderHistory();
+       
+        if (audioEnabled) {
+            speak('Item removed from history');
+        }
+    }
+
+    function setupAccessibility() {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+           
+            if (e.ctrlKey && e.key === 'h') {
+                if (audioEnabled) {
+                    speak('Welcome to Indian Livestock Identification System. Press Tab to navigate, Enter to select, Escape to close modals. Use the search box to find specific breeds. Upload photos for AI identification.');
+                }
+            }
+        });
+       
+        document.querySelectorAll('button, input, select').forEach(element => {
+            element.addEventListener('focus', () => {
+                if (audioEnabled && element.getAttribute('aria-label')) {
+                    speak(element.getAttribute('aria-label'));
+                }
+            });
+        });
+    }
+
+    window.showBreedModal = showBreedModal;
+    window.speakBreed = speakBreed;
+    window.removeFromHistory = removeFromHistory;
+    window.showTooltip = showTooltip;
+    window.hideTooltip = hideTooltip;
+
+    init();
+</script>   
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9802e76352ad3d3f',t:'MTc1ODA1MjM0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>
+const fileInput = document.getElementById("fileInput");
+const previewImage = document.getElementById("previewImage");
+const identifyBtn = document.getElementById("identifyBtn");
+const confidenceSection = document.getElementById("confidenceSection");
+const confidenceBar = document.getElementById("confidenceBar");
+const confidenceText = document.getElementById("confidenceText");
+
+// Show preview when file is selected
+fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        previewImage.src = evt.target.result;
+        document.getElementById("uploadPreview").classList.remove("hidden");
+    }
+    reader.readAsDataURL(file);
+});
+
+// On Identify button click
+identifyBtn.addEventListener("click", async () => {
+    const base64Image = previewImage.src;
+    if (!base64Image) return alert("Upload an image first!");
+
+    try {
+        const response = await fetch("http://127.0.0.1:5000/predict", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({image_data: base64Image})
+        });
+        const data = await response.json();
+
+        if(data.error){
+            alert("Error: " + data.error);
+            return;
+        }
+
+        const breedName = data.breedName;
+        const confidence = (data.confidenceScore * 100).toFixed(2);
+
+        // Show confidence bar
+        confidenceSection.classList.remove("hidden");
+        confidenceBar.style.width = confidence + "%";
+        confidenceText.textContent = `${breedName} (${confidence}%)`;
+
+    } catch(err){
+        alert("API call failed: " + err);
+    }
+});
+</script>
+
+</body>
+</html>
